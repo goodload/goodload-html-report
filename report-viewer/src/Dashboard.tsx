@@ -2,17 +2,18 @@
 // Dashboard should have two panes. In left pane I will have list of 'scenarios' as written in the tool.. Each scenario will have nested list of 'Steps'. When clicking on any scenario or step, I should see the aggregate report of that step in the right pane.
 
 // Two pane dashboard
-import React, {useEffect, useRef, useState} from "react";
-import mysql from "mysql2/promise";
-import {MySQLProvider} from "./data/providers/mysql-provider";
+import * as React from "react";
+import {useEffect, useRef, useState} from "react";
+import {ProviderFactory} from "./data/providers/provider-factory";
 import {StepDef, SimulationMetadata} from "./data/dtos/dtos";
 import ReportNavPane from "./ReportNavPane";
+import ReportDetailsPane from "./ReportDetailsPane";
 
 type SelectedStepPath = number[];
 
 
 function Dashboard() {
-    const dataProvider = new MySQLProvider();
+    const dataProvider = ProviderFactory.buildProvider();
 
     const [simulation, setSimulation] = useState<SimulationMetadata>({
         id: "loading",
@@ -21,20 +22,23 @@ function Dashboard() {
 
     const [stepDefs, setStepDefs] = useState<StepDef[]>([])
 
-    const [selectedStep, setSelectedStep] = useState<StepDef>();
+    // TODO: prevent index out of bounds error as stepDefs initially will not have anything
+    const [selectedStep, setSelectedStep] = useState<StepDef>(stepDefs[0]);
 
     // Get simulation structure from report datasource
     useEffect(() => {
         async function fetchScenarios() {
-            const simulation = await dataProvider.loadSimulationStructure();
-            setSimulation(simulation);
+            const simulationPromise = dataProvider.loadSimulationStructure();
+            const stepsGraphPromise = dataProvider.getStepsGraph();
+            setSimulation(await simulationPromise);
+            setStepDefs(await stepsGraphPromise);
             if (stepDefs.length > 0) {
                 setSelectedStep(stepDefs[0]);
             }
         }
 
         fetchScenarios()
-            .then(() => console.debug("Simulation structured fetched"))
+            .then(() => console.debug("Simulation structure fetched"))
             .catch((error) => console.error("Failed to load simulation structure with error: " + error))
     }, [])
 
@@ -43,17 +47,12 @@ function Dashboard() {
     };
 
     return (
-        <div className="dashboard">
+        <div id="dashboard">
             <ReportNavPane simulationMetadata={simulation}
                            steps={stepDefs}
                            selectedStep={selectedStep}
                            handleStepClick={handleStepClick}/>
             <ReportDetailsPane simulation={simulation} selectedStep={selectedStep}/>
-
-
-            <div className="details-pane">
-
-            </div>
         </div>
     );
 }

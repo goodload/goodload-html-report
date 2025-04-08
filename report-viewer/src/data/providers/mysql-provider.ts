@@ -1,7 +1,9 @@
-import mysql, {RowDataPacket} from "mysql2/promise";
-import {StepDef, SimulationMetadata, StepMetrics} from "../dtos/dtos";
+import * as mysql from "mysql2/promise";
 
-export class MySQLProvider {
+import {StepDef, SimulationMetadata, StepMetrics} from "../dtos/dtos";
+import {Provider} from "./provider";
+
+export class MySQLProvider extends Provider {
     private pool: mysql.Pool;
 
     private viewsCreated: boolean = false
@@ -13,6 +15,7 @@ export class MySQLProvider {
         password: '',
         port: 3306
     }) {
+        super();
         console.log('MySQLProvider connecting to ' + config.host + ':' + config.port + '/' + config.database);
         this.pool = mysql.createPool(config);
 
@@ -21,9 +24,10 @@ export class MySQLProvider {
     }
 
     public async loadSimulationStructure(): Promise<SimulationMetadata> {
-        const [results, fields] = await this.pool.execute('SELECT * FROM simulation_structure LIMIT 1;');
 
-        const rows = results as any as RowDataPacket[];
+        const [results, fields] = await this.pool.query('SELECT * FROM simulation_structure LIMIT 1;');
+
+        const rows = results as any as mysql.RowDataPacket[];
 
         if (rows.length <= 0) {
             throw new Error("No simulation found in datasource")
@@ -36,8 +40,8 @@ export class MySQLProvider {
     }
 
     public async getStepsGraph(): Promise<StepDef[]> {
-        const [rootStepsResults] = await this.pool.execute('SELECT * FROM action_metadata WHERE parent IS NULL;');
-        const rows = rootStepsResults as any as RowDataPacket[];
+        const [rootStepsResults] = await this.pool.query('SELECT * FROM action_metadata WHERE parent IS NULL;');
+        const rows = rootStepsResults as any as mysql.RowDataPacket[];
 
         const stepDefs: StepDef[] = [];
 
@@ -52,10 +56,10 @@ export class MySQLProvider {
         return stepDefs;
     }
 
-    private async getSubStepsGraph(parentStepId: number): Promise<StepDef[]> {
+    protected async getSubStepsGraph(parentStepId: number): Promise<StepDef[]> {
         const [subStepResults] = await this.pool.execute('SELECT * FROM action_metadata WHERE parent = ?;', parentStepId);
 
-        const rows = subStepResults as any as RowDataPacket[];
+        const rows = subStepResults as any as mysql.RowDataPacket[];
 
         let subSteps: StepDef[] = [];
 
@@ -72,7 +76,7 @@ export class MySQLProvider {
         return subSteps
     }
 
-    private async getMetricsForStepId(stepId: string, startTimestamp: number, endTimestamp: number): Promise<StepMetrics> {
+    public async getMetricsForStepId(stepId: string, startTimestamp: number, endTimestamp: number): Promise<StepMetrics> {
         const [avgIterationTime, percentile95ExecutionTime, percentile99ExecutionTime] = await Promise.all([
             this.getAverageExecutionTimeForStepId(stepId, startTimestamp, endTimestamp),
             this.getPercentileExecutionTimeForStepId(stepId, startTimestamp, endTimestamp, 0.95),
@@ -91,12 +95,14 @@ export class MySQLProvider {
             `SELECT DISTINCT first_value(my_column) OVER (
               ORDER BY CASE WHEN perc_rank <= ? THEN perc_rank END DESC /* NULLS LAST */
             ) perc_value,
-            FROM action_report_view
-            WHERE step_id = ? AND start_timestamp_in_millis >= ? AND end_timestamp_in_millis <= ?;`,
+             FROM action_report_view
+             WHERE step_id = ?
+               AND start_timestamp_in_millis >= ?
+               AND end_timestamp_in_millis <= ?;`,
             [percentile, stepId, startTimestamp, endTimestamp]
         )
 
-        const rows = percentileExecutionTimeResult as any as RowDataPacket[];
+        const rows = percentileExecutionTimeResult as any as mysql.RowDataPacket[];
 
         return parseInt(rows[0].perc_value)
     }
@@ -104,12 +110,14 @@ export class MySQLProvider {
     private async getAverageExecutionTimeForStepId(stepId: string, startTimestamp: number, endTimestamp: number): Promise<number> {
         const [percentileExecutionTimeResult] = await this.pool.execute(
             `SELECT AVG(iteration_execution_time) AS avg_iteration_execution_time,
-            FROM action_report_view
-            WHERE step_id = ? AND start_timestamp_in_millis >= ? AND end_timestamp_in_millis <= ?;`,
+             FROM action_report_view
+             WHERE step_id = ?
+               AND start_timestamp_in_millis >= ?
+               AND end_timestamp_in_millis <= ?;`,
             [stepId, startTimestamp, endTimestamp]
         )
 
-        const rows = percentileExecutionTimeResult as any as RowDataPacket[];
+        const rows = percentileExecutionTimeResult as any as mysql.RowDataPacket[];
 
         return parseInt(rows[0].perc_value)
     }
@@ -133,7 +141,7 @@ export class MySQLProvider {
             .then(() => {
                 actionReportViewCreated = true
                 console.debug('action_report_view created')
-            }).catch(error => console.error(error));
+            }).catch((error: any) => console.error(error));
 
         if (actionReportViewCreated) {
             this.viewsCreated = true;
