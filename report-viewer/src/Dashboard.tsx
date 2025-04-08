@@ -8,6 +8,7 @@ import {ProviderFactory} from "./data/providers/provider-factory";
 import {StepDef, SimulationMetadata} from "./data/dtos/dtos";
 import ReportNavPane from "./ReportNavPane";
 import ReportDetailsPane from "./ReportDetailsPane";
+import {Container, Navbar, Row} from "react-bootstrap";
 
 type SelectedStepPath = number[];
 
@@ -48,11 +49,21 @@ function Dashboard() {
 
     return (
         <div id="dashboard">
-            <ReportNavPane simulationMetadata={simulation}
-                           steps={stepDefs}
-                           selectedStep={selectedStep}
-                           handleStepClick={handleStepClick}/>
-            <ReportDetailsPane simulation={simulation} selectedStep={selectedStep}/>
+            <Container>
+                <Row>
+                    <div id="scenario-nav-pane" className="col-3">
+                        <ReportNavPane
+                            simulationMetadata={simulation}
+                            steps={stepDefs}
+                            selectedStep={selectedStep}
+                            handleStepClick={handleStepClick}
+                        />
+                    </div>
+                    <div id="report-details-pane" className="col">
+                        <ReportDetailsPane simulation={simulation} selectedStep={selectedStep}/>
+                    </div>
+                </Row>
+            </Container>
         </div>
     );
 }

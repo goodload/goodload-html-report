@@ -18,20 +18,42 @@ export class MockProvider extends Provider {
                 name: 'Step 1',
                 subSteps: [
                     {
-                        id: '2',
-                        name: 'Step 2',
-                        subSteps: []
+                        id: '1.1',
+                        name: 'Step 1.1',
+                        subSteps: [
+                            {
+                                id: '1.1.1',
+                                name: 'Step 1.1.1',
+                                subSteps: []
+                            },
+                            {
+                                id: '1.1.2',
+                                name: 'Step 1.1.2',
+                                subSteps: []
+                            }
+                        ]
                     },
                     {
-                        id: '3',
-                        name: 'Step 3',
-                        subSteps: []
+                        id: '1.2',
+                        name: 'Step 1.2',
+                        subSteps: [
+                            {
+                                id: '1.2.1',
+                                name: 'Step 1.2.1',
+                                subSteps: []
+                            },
+                            {
+                                id: '1.2.2',
+                                name: 'Step 1.2.2',
+                                subSteps: []
+                            }
+                        ]
                     }
                 ]
             },
             {
-                id: '4',
-                name: 'Step 4',
+                id: '2',
+                name: 'Step 2',
                 subSteps: []
             }
         ]);

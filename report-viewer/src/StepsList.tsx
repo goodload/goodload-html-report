@@ -1,35 +1,58 @@
 import {StepDef} from "./data/dtos/dtos";
+import {Nav, Navbar, NavDropdown, NavItem} from "react-bootstrap";
 
-type Props = {
+type StepsListProps = {
     level: number
     steps: StepDef[]
     selectedStep?: StepDef,
     handleStepClick: (step: StepDef) => void
 }
 
-export default function StepsList(props: Props) {
-    if (props.level > 10 || !props.steps || props.steps.length === 0) {
-        return null
+type StepProps = {
+    level: number
+    step: StepDef
+    selectedStep?: StepDef,
+    handleStepClick: (step: StepDef) => void
+}
+
+function Step(props: StepProps) {
+    if (props.step.subSteps === null || props.step.subSteps.length === 0) {
+        return (
+            <>
+                <NavItem>
+                    <span className={`steps-list steps-list-level-${props.level}`}>
+                        <span className={'step-nav-item-text'}>{props.step.name}</span>
+                    </span>
+                </NavItem>
+            </>
+        )
+    } else {
+        return (
+            <>
+                <Navbar title={props.step.name} id={`nav-dropdown-${props.step.id}`} className="flex-column">
+                    <StepsList level={props.level + 1}
+                               steps={props.step.subSteps}
+                               selectedStep={props.selectedStep}
+                               handleStepClick={props.handleStepClick}/>
+                </Navbar>
+            </>
+        )
+    }
+}
+
+export default function StepsList(props: StepsListProps) {
+    if (props === null || props.steps == null) {
+        return (<></>)
     }
 
-    return (
-        <ul className={`steps-list steps-list-level-${props.level}`}>
-            {
-                props.steps.map((step) => (
-                    <li
-                        key={step.id}
-                        className={`step-nav-item ${props.selectedStep === step ? "selected" : ""}`}
-                        onClick={() => props.handleStepClick(step)}
-                    >
-                        <span className={'step-nav-item-text'}>{step.name}</span>
+    let content = props.steps.map((step: StepDef, index: number) => {
+        return (<>
+            <Step level={props.level + 1} step={step} handleStepClick={props.handleStepClick} />
+        </>)
+    })
 
-                        <StepsList level={props.level + 1}
-                                   steps={step.subSteps}
-                                   selectedStep={props.selectedStep}
-                                   handleStepClick={props.handleStepClick}/>
-                    </li>
-                ))
-            }
-        </ul>
-    )
+    return (
+    <>
+        {content}
+    </>)
 }

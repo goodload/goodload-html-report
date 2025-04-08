@@ -1,6 +1,7 @@
 import * as React from "react";
 import {StepDef, SimulationMetadata} from "./data/dtos/dtos";
 import StepsList from "./StepsList";
+import {Navbar} from "react-bootstrap";
 
 type ReportNavPaneProps = {
     simulationMetadata: SimulationMetadata,
@@ -18,11 +19,23 @@ function ReportNavPane(props: ReportNavPaneProps) {
                 {props.simulationMetadata.name}
             </span>
         </div>
-        <div className="nav-pane-contents">
-            <StepsList level={0}
-                       steps={props.steps}
-                       selectedStep={props.selectedStep}
-                       handleStepClick={props.handleStepClick} />
+
+        <Navbar expand="lg" className="flex-column justify-content-end">
+            <div className="nav-pane-contents">
+                <StepsList level={0}
+                           steps={props.steps}
+                           selectedStep={props.selectedStep}
+                           handleStepClick={props.handleStepClick}/>
+            </div>
+            <div>
+                <p>.</p>
+            </div>
+        </Navbar>
+        <div>
+            Some random test in report navpane
+        </div>
+        <div>
+            .
         </div>
     </div>)
 }
